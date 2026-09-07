@@ -1,13 +1,61 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
-from sqlalchemy import func, extract, or_
+from sqlalchemy import func, extract, or_, case
 from datetime import datetime, timedelta, time
 from app.models import (
     db, Usuario, Vehiculo, Reporte, 
-    ReporteMatpelGLP, ReporteServicioAgua, ReporteServicioBaldeo
+    ReporteMatpelGLP, ReporteServicioAgua, ReporteServicioBaldeo,
+    RANGOS_BOMBERILES
 )
+from app.services.pdf_service import obtener_logo_data_uri
 
 main_bp = Blueprint('main', __name__)
+
+def _orden_jerarquia(column):
+    """
+    Expresión SQL para ordenar por la jerarquía establecida en RANGOS_BOMBERILES
+    (los rangos no incluidos en la lista van al final, ordenados alfabéticamente).
+    """
+    rango_pos = case(
+        {rango: posicion for posicion, rango in enumerate(RANGOS_BOMBERILES)},
+        value=column,
+        else_=len(RANGOS_BOMBERILES)
+    )
+    return rango_pos
+
+def _aplicar_filtros_usuarios(args):
+    """
+    Aplica los filtros de búsqueda de la gestión de personal: texto libre,
+    rango jerárquico, rol del sistema y estado de la cuenta.
+    Devuelve (consulta, dict_filtros).
+    """
+    query = Usuario.query
+
+    texto = args.get('q', '').strip()
+    rango = args.get('rango', '').strip()
+    rol = args.get('rol', '').strip()
+    estado = args.get('estado', '').strip()
+
+    if texto:
+        patron = f'%{texto}%'
+        query = query.filter(or_(
+            Usuario.nombre.ilike(patron),
+            Usuario.apellido.ilike(patron),
+            Usuario.username.ilike(patron),
+            Usuario.cedula.ilike(patron)
+        ))
+
+    if rango:
+        query = query.filter(Usuario.rango == rango)
+
+    if rol in ('administrador', 'bombero'):
+        query = query.filter(Usuario.rol == rol)
+
+    if estado in ('activo', 'inactivo'):
+        query = query.filter(Usuario.activo == (estado == 'activo'))
+
+    filtros = {'q': texto, 'rango': rango, 'rol': rol, 'estado': estado}
+    return query, filtros
 
 @main_bp.route('/')
 @login_required
@@ -175,13 +223,148 @@ def dashboard_admin():
 @login_required
 def gestionar_usuarios():
     """
-    Visualiza la lista de usuarios y bomberos registrados. Exclusivo de administrador.
+    Visualiza la lista de usuarios y bomberos registrados con filtros de búsqueda
+    (texto, rango, rol y estado). Exclusivo de administrador.
     """
     if not current_user.es_admin:
         flash('Acceso denegado.', 'danger')
         return redirect(url_for('main.index'))
-    usuarios = Usuario.query.order_by(Usuario.rango.asc(), Usuario.nombre.asc()).all()
-    return render_template('admin/usuarios.html', usuarios=usuarios)
+
+    query, filtros = _aplicar_filtros_usuarios(request.args)
+    usuarios = query.order_by(
+        _orden_jerarquia(Usuario.rango).asc(),
+        Usuario.nombre.asc()
+    ).all()
+
+    return render_template(
+        'admin/usuarios.html',
+        usuarios=usuarios,
+        rangos=RANGOS_BOMBERILES,
+        filtros=filtros
+    )
+
+
+@main_bp.route('/admin/usuarios/imprimir')
+@login_required
+def lista_bomberos_imprimir():
+    """
+    Vista imprimible (lista oficial) del personal bomberil filtrado por los
+    mismos criterios de búsqueda de la gestión. Exclusivo de administrador.
+    """
+    if not current_user.es_admin:
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('main.index'))
+
+    query, filtros = _aplicar_filtros_usuarios(request.args)
+    usuarios = query.order_by(
+        _orden_jerarquia(Usuario.rango).asc(),
+        Usuario.nombre.asc()
+    ).all()
+
+    fecha_emision = datetime.utcnow().strftime('%d/%m/%Y %H:%M')
+
+    return render_template(
+        'admin/lista_bomberos.html',
+        usuarios=usuarios,
+        filtros=filtros,
+        logo=obtener_logo_data_uri(),
+        fecha_emision=fecha_emision,
+        emitido_por=current_user
+    )
+
+
+@main_bp.route('/admin/usuario/<int:usuario_id>')
+@login_required
+def ver_usuario(usuario_id):
+    """
+    Visualiza el detalle completo de un bombero: datos personales, credenciales
+    de acceso y reportes que ha elaborado. Exclusivo de administrador.
+    """
+    if not current_user.es_admin:
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('main.index'))
+    usuario = Usuario.query.get_or_404(usuario_id)
+    reportes = Reporte.query.filter_by(creador_id=usuario.id).order_by(Reporte.fecha.desc()).all()
+    return render_template('admin/ver_usuario.html', usuario=usuario, reportes=reportes)
+
+
+@main_bp.route('/admin/usuario/<int:usuario_id>/editar', methods=['GET', 'POST'])
+@login_required
+def editar_usuario(usuario_id):
+    """
+    Edita los datos y credenciales de un bombero. Exclusivo de administrador.
+    Si se deja la contraseña en blanco, se conserva la actual.
+    """
+    if not current_user.es_admin:
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('main.index'))
+
+    usuario = Usuario.query.get_or_404(usuario_id)
+
+    if request.method == 'POST':
+        username = request.form.get('username')
+        nombre = request.form.get('nombre')
+        apellido = request.form.get('apellido')
+        cedula = request.form.get('cedula')
+        rango = request.form.get('rango')
+        rol = request.form.get('rol', 'bombero')
+        activo = request.form.get('activo') == 'on'
+        password = request.form.get('password')
+
+        # Validación de unicidad (excluyendo al propio usuario)
+        duplicado = Usuario.query.filter(
+            ((Usuario.username == username) | (Usuario.cedula == cedula)) &
+            (Usuario.id != usuario.id)
+        ).first()
+        if duplicado:
+            flash('Error: El nombre de usuario o la cédula ya pertenecen a otro funcionario.', 'danger')
+            return redirect(url_for('main.editar_usuario', usuario_id=usuario.id))
+
+        usuario.username = username
+        usuario.nombre = nombre
+        usuario.apellido = apellido
+        usuario.cedula = cedula
+        usuario.rango = rango
+        usuario.rol = rol
+        usuario.activo = activo
+        if password:
+            usuario.set_password(password)
+
+        db.session.commit()
+        flash(f'Datos de {usuario.nombre} {usuario.apellido} actualizados correctamente.', 'success')
+        return redirect(url_for('main.gestionar_usuarios'))
+
+    return render_template('admin/editar_usuario.html', usuario=usuario, rangos=RANGOS_BOMBERILES)
+
+
+@main_bp.route('/admin/usuario/<int:usuario_id>/eliminar', methods=['POST'])
+@login_required
+def eliminar_usuario(usuario_id):
+    """
+    Elimina un bombero del sistema. Exclusivo de administrador.
+    No se permite borrar la propia cuenta ni a usuarios con reportes creados.
+    """
+    if not current_user.es_admin:
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('main.index'))
+
+    usuario = Usuario.query.get_or_404(usuario_id)
+
+    if usuario.id == current_user.id:
+        flash('No puede eliminar su propia cuenta de administrador.', 'warning')
+        return redirect(url_for('main.gestionar_usuarios'))
+
+    if usuario.reportes_creados:
+        flash(f'No se puede eliminar a {usuario.nombre} {usuario.apellido}: tiene '
+              f'{len(usuario.reportes_creados)} reporte(s) en el sistema. '
+              'Puede desactivar su cuenta en la edición en su lugar.', 'warning')
+        return redirect(url_for('main.gestionar_usuarios'))
+
+    nombre_completo = f'{usuario.nombre} {usuario.apellido}'
+    db.session.delete(usuario)
+    db.session.commit()
+    flash(f'El bombero {nombre_completo} fue eliminado del sistema.', 'success')
+    return redirect(url_for('main.gestionar_usuarios'))
 
 
 @main_bp.route('/admin/reporte/<int:reporte_id>/eliminar', methods=['POST'])

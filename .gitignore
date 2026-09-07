@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.pyo
+*.db
+bomberos_commit.db
+migrate_db.py
+.env
+*.egg-info/
+venv/

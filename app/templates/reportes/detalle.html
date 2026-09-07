@@ -62,6 +62,11 @@
                 <i data-lucide="printer" class="w-4 h-4"></i>
                 <span>Imprimir Reporte</span>
             </button>
+
+            <a href="{{ url_for('reportes.descargar_pdf', reporte_id=reporte.id) }}" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold transition-all flex items-center space-x-2 shadow-lg shadow-emerald-950/20">
+                <i data-lucide="file-down" class="w-4 h-4"></i>
+                <span>Descargar PDF</span>
+            </a>
             
             {% if current_user.es_admin and reporte.estado == 'Enviado' %}
             <form action="{{ url_for('main.validar_reporte', reporte_id=reporte.id) }}" method="POST" class="inline">
@@ -158,6 +163,17 @@
                     </div>
                 </div>
 
+                <div class="border-t border-slate-800/40 pt-2 col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                        <span class="block font-semibold text-slate-500">Receptor del Aviso:</span>
+                        <span class="text-white text-sm font-medium">{{ reporte.receptor_aviso }}</span>
+                    </div>
+                    <div>
+                        <span class="block font-semibold text-slate-500">Cédula / RIF Receptor:</span>
+                        <span class="text-white text-sm font-medium">{{ reporte.receptor_cedula or '--' }}</span>
+                    </div>
+                </div>
+
                 <div class="border-t border-slate-800/40 pt-2 col-span-3">
                     <span class="block font-semibold text-slate-500">Dirección del Suceso:</span>
                     <span class="text-white text-sm font-medium block">{{ reporte.direccion }}</span>
@@ -230,11 +246,16 @@
                     <span class="block font-semibold text-slate-500">Vehículo Transportador Involucrado:</span>
                     <span class="text-white text-sm font-medium">
                         Marca: {{ reporte.vehiculo_marca or '--' }} | 
+                        Modelo: {{ reporte.vehiculo_modelo or '--' }} | 
                         Placa: {{ reporte.vehiculo_placa or '--' }} | 
                         Color: {{ reporte.vehiculo_color or '--' }}
                     </span>
                 </div>
                 {% endif %}
+                <div class="border-t border-slate-800/40 pt-2 col-span-3">
+                    <span class="block font-semibold text-slate-500">Vehículo Afectó el Inmueble:</span>
+                    <span class="text-white text-sm font-medium">{% if reporte.vehiculo_afecto %}Sí{% else %}No{% endif %}</span>
+                </div>
             </div>
         </div>
 
@@ -255,14 +276,41 @@
                     <span class="text-white text-sm font-medium">{{ reporte.tipo_almacenamiento }}</span>
                 </div>
                 <div>
-                    <span class="block font-semibold text-slate-500">Cantidad Estimada:</span>
-                    <span class="text-white text-sm font-bold text-red-400">{{ reporte.cantidad_estimada_derrame or '0' }} Litros</span>
+                    <span class="block font-semibold text-slate-500">Código ONU (UN):</span>
+                    <span class="text-white text-sm font-medium">{{ reporte.un_numero or '--' }}</span>
+                </div>
+                
+                <div class="border-t border-slate-800/40 pt-2 col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <span class="block font-semibold text-slate-500">Capacidad del Tanque:</span>
+                        <span class="text-white text-sm font-medium">{{ reporte.capacidad_tanque_litros or '--' }} Litros</span>
+                    </div>
+                    <div>
+                        <span class="block font-semibold text-slate-500">Cantidad Estimada:</span>
+                        <span class="text-white text-sm font-bold text-red-400">{{ reporte.cantidad_estimada_derrame or '0' }} Litros</span>
+                    </div>
+                    <div>
+                        <span class="block font-semibold text-slate-500">Vehículo Afectó:</span>
+                        <span class="text-white text-sm font-medium">{% if reporte.vehiculo_afecto %}Sí{% else %}No{% endif %}</span>
+                    </div>
                 </div>
                 
                 {% if reporte.vehiculos_involucrados %}
                 <div class="border-t border-slate-800/40 pt-2 col-span-3">
                     <span class="block font-semibold text-slate-500">Vehículos Involucrados:</span>
                     <span class="text-white text-sm font-medium block">{{ reporte.vehiculos_involucrados }}</span>
+                </div>
+                {% endif %}
+
+                {% if reporte.vehiculo_marca or reporte.vehiculo_placa %}
+                <div class="border-t border-slate-800/40 pt-2 col-span-3">
+                    <span class="block font-semibold text-slate-500">Características del Vehículo:</span>
+                    <span class="text-white text-sm font-medium">
+                        Marca: {{ reporte.vehiculo_marca or '--' }} | 
+                        Modelo: {{ reporte.vehiculo_modelo or '--' }} | 
+                        Placa: {{ reporte.vehiculo_placa or '--' }} | 
+                        Color: {{ reporte.vehiculo_color or '--' }}
+                    </span>
                 </div>
                 {% endif %}
                 
@@ -309,6 +357,25 @@
                     <span class="block font-semibold text-slate-500">Acciones de Mitigación:</span>
                     <span class="text-white text-sm font-medium block">{{ reporte.acciones_mitigacion }}</span>
                 </div>
+
+                <div class="border-t border-slate-800/40 pt-2 col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <span class="block font-semibold text-slate-500">Vehículo Afectó:</span>
+                        <span class="text-white text-sm font-medium">{% if reporte.vehiculo_afecto %}Sí{% else %}No{% endif %}</span>
+                    </div>
+                </div>
+
+                {% if reporte.vehiculo_marca or reporte.vehiculo_placa %}
+                <div class="border-t border-slate-800/40 pt-2 col-span-3">
+                    <span class="block font-semibold text-slate-500">Características del Vehículo:</span>
+                    <span class="text-white text-sm font-medium">
+                        Marca: {{ reporte.vehiculo_marca or '--' }} | 
+                        Modelo: {{ reporte.vehiculo_modelo or '--' }} | 
+                        Placa: {{ reporte.vehiculo_placa or '--' }} | 
+                        Color: {{ reporte.vehiculo_color or '--' }}
+                    </span>
+                </div>
+                {% endif %}
             </div>
         </div>
 

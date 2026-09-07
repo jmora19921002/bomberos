@@ -1,12 +1,13 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, Response
 from flask_login import login_required, current_user
 from datetime import datetime
 from app.models import (
-    db, Vehiculo, Reporte, ReporteVehiculoActuante, ReportePersonalActuante, ReporteOtroOrganismo,
+    db, Usuario, Vehiculo, Reporte, ReporteVehiculoActuante, ReportePersonalActuante, ReporteOtroOrganismo,
     ReporteMatpelGLP, ReporteMatpelCombustible, ReporteMatpelQuimico, ReporteMatpelOtros,
     ReportePreHospitalario, ReporteServicioAgua, ReporteServicioInsectos, ReporteServicioAnimal,
     ReporteServicioAchicamiento, ReporteServicioBaldeo
 )
+from app.services.pdf_service import generar_pdf_reporte, renderizar_html_reporte
 
 reportes_bp = Blueprint('reportes', __name__)
 
@@ -55,18 +56,20 @@ REPORT_TITLE_MAP = {
 # Campos específicos que corresponden a cada clase de reporte
 REPORT_FIELDS_MAP = {
     'matpel_glp': [
-        'clasificacion_servicio', 'nombre_producto', 'un_numero', 'tipo_almacenamiento',
+        'clasificacion_servicio', 'nombre_producto', 'un_numero', 'riesgo_producto', 'tipo_almacenamiento',
         'certificado_bomberil', 'nro_certificado', 'propietario_nombre', 'propietario_rif_ci',
-        'empresa_distribuidora', 'vehiculo_marca', 'vehiculo_placa', 'vehiculo_color',
-        'hoja_seguridad', 'extintor', 'equipo_derrame'
+        'empresa_distribuidora', 'vehiculo_marca', 'vehiculo_modelo', 'vehiculo_placa', 'vehiculo_color',
+        'vehiculo_afecto', 'hoja_seguridad', 'extintor', 'equipo_derrame'
     ],
     'matpel_combustible': [
-        'tipo_combustible', 'tipo_almacenamiento', 'vehiculos_involucrados',
-        'mitigacion_efectuada', 'cantidad_estimada_derrame'
+        'tipo_combustible', 'tipo_almacenamiento', 'un_numero', 'capacidad_tanque_litros',
+        'vehiculos_involucrados', 'mitigacion_efectuada', 'cantidad_estimada_derrame',
+        'vehiculo_marca', 'vehiculo_modelo', 'vehiculo_placa', 'vehiculo_color', 'vehiculo_afecto'
     ],
     'matpel_quimico': [
         'nombre_sustancia', 'un_numero', 'riesgos_especificos',
-        'materiales_absorbentes_usados', 'materiales_neutralizantes_usados', 'acciones_mitigacion'
+        'materiales_absorbentes_usados', 'materiales_neutralizantes_usados', 'acciones_mitigacion',
+        'vehiculo_marca', 'vehiculo_modelo', 'vehiculo_placa', 'vehiculo_color', 'vehiculo_afecto'
     ],
     'matpel_otros': [
         'descripcion_sustancia', 'riesgos_identificados', 'medidas_seguridad_adoptadas'
@@ -97,6 +100,21 @@ REPORT_FIELDS_MAP = {
     ]
 }
 
+def resolver_personal_seleccionado(clave_usuario_id, clave_nombre, clave_ci, clave_rango):
+    """
+    Resuelve los datos de un bombero del formulario: si se eligió un usuario
+    del listado (select), toma nombre, cédula y rango desde la BD; en caso
+    contrario usa los campos de texto manuales (compatibilidad).
+    Devuelve (nombre_completo, cedula, rango).
+    """
+    usuario_id = request.form.get(clave_usuario_id)
+    if usuario_id:
+        usuario = Usuario.query.get(int(usuario_id))
+        if usuario:
+            return f'{usuario.nombre} {usuario.apellido}', usuario.cedula, usuario.rango
+    return request.form.get(clave_nombre), request.form.get(clave_ci), request.form.get(clave_rango)
+
+
 def parse_field_value(field_name, raw_val):
     """
     Parsea los valores raw provenientes del formulario de acuerdo a sus tipos de datos requeridos en la BD.
@@ -104,7 +122,7 @@ def parse_field_value(field_name, raw_val):
     if raw_val is None or raw_val == '':
         return None
     # Booleanos
-    if field_name in ['certificado_bomberil', 'hoja_seguridad', 'extintor', 'equipo_derrame', 'limpieza_vias_efectuada']:
+    if field_name in ['certificado_bomberil', 'hoja_seguridad', 'extintor', 'equipo_derrame', 'limpieza_vias_efectuada', 'vehiculo_afecto']:
         return raw_val in ['Si', 'on', 'true', '1', True]
     # Enteros
     if field_name in ['paciente_edad', 'signos_vitales_pulso', 'signos_vitales_fr', 'litros_distribuidos', 'beneficiarios_estimados', 'litros_agua_utilizados']:
@@ -113,7 +131,7 @@ def parse_field_value(field_name, raw_val):
         except ValueError:
             return 0
     # Flotantes / Decimales
-    if field_name in ['cantidad_estimada_derrame']:
+    if field_name in ['cantidad_estimada_derrame', 'capacidad_tanque_litros']:
         try:
             return float(raw_val)
         except ValueError:
@@ -159,6 +177,7 @@ def crear_reporte(tipo_reporte):
             solicitante_cedula = request.form.get('solicitante_cedula')
             solicitante_telefono = request.form.get('solicitante_telefono')
             receptor_aviso = request.form.get('receptor_aviso')
+            receptor_cedula = request.form.get('receptor_cedula')
             
             direccion = request.form.get('direccion')
             punto_referencia = request.form.get('punto_referencia')
@@ -168,6 +187,11 @@ def crear_reporte(tipo_reporte):
             specific_kwargs = {}
             for field in fields:
                 raw_val = request.form.get(field)
+                # Si el campo tiene opción "Otro", usar el valor del input de texto
+                if raw_val == 'Otro':
+                    otro_val = request.form.get(f'{field}_otro')
+                    if otro_val:
+                        raw_val = otro_val
                 specific_kwargs[field] = parse_field_value(field, raw_val)
 
             # 4. INSTANCIAR Y GUARDAR REPORTE POLIMÓRFICO
@@ -183,6 +207,7 @@ def crear_reporte(tipo_reporte):
                 solicitante_cedula=solicitante_cedula,
                 solicitante_telefono=solicitante_telefono,
                 receptor_aviso=receptor_aviso,
+                receptor_cedula=receptor_cedula,
                 direccion=direccion,
                 punto_referencia=punto_referencia,
                 creador_id=current_user.id,
@@ -212,9 +237,14 @@ def crear_reporte(tipo_reporte):
                     db.session.add(vehiculo_act)
 
             # 6. REGISTRAR PERSONAL ACTUANTE (Jefe de Comisión, Conductor y Elaborado Por)
+            jefe_nombre, jefe_ci, jefe_rango = resolver_personal_seleccionado(
+                'jefe_comision_usuario_id', 'jefe_comision_nombre', 'jefe_comision_ci', 'jefe_comision_rango')
+            conductor_nombre, conductor_ci, conductor_rango = resolver_personal_seleccionado(
+                'conductor_unidad_usuario_id', 'conductor_unidad_nombre', 'conductor_unidad_ci', 'conductor_unidad_rango')
+
             roles_personal = [
-                ('Jefe de Comisión', request.form.get('jefe_comision_nombre'), request.form.get('jefe_comision_ci'), request.form.get('jefe_comision_rango')),
-                ('Conductor Unidad', request.form.get('conductor_unidad_nombre'), request.form.get('conductor_unidad_ci'), request.form.get('conductor_unidad_rango')),
+                ('Jefe de Comisión', jefe_nombre, jefe_ci, jefe_rango),
+                ('Conductor Unidad', conductor_nombre, conductor_ci, conductor_rango),
                 ('Reporte Elaborado Por', current_user.nombre + " " + current_user.apellido, current_user.cedula, current_user.rango)
             ]
             
@@ -229,18 +259,28 @@ def crear_reporte(tipo_reporte):
                     )
                     db.session.add(pers_act)
 
-            # Combatientes dinámicos
+            # Combatientes dinámicos (selección de bomberos del sistema o texto manual)
+            combatientes_usuario_ids = request.form.getlist('combatientes_usuario_id[]')
             combatientes_nombres = request.form.getlist('combatientes_nombres[]')
             combatientes_cis = request.form.getlist('combatientes_cis[]')
             combatientes_rangos = request.form.getlist('combatientes_rangos[]')
             
-            for i in range(len(combatientes_nombres)):
-                if combatientes_nombres[i]:
+            for i in range(max(len(combatientes_usuario_ids), len(combatientes_nombres))):
+                nombre = ci = rango = None
+                if i < len(combatientes_usuario_ids) and combatientes_usuario_ids[i]:
+                    usuario = Usuario.query.get(int(combatientes_usuario_ids[i]))
+                    if usuario:
+                        nombre, ci, rango = f'{usuario.nombre} {usuario.apellido}', usuario.cedula, usuario.rango
+                if not nombre and i < len(combatientes_nombres) and combatientes_nombres[i]:
+                    nombre = combatientes_nombres[i]
+                    ci = combatientes_cis[i] if i < len(combatientes_cis) else ""
+                    rango = combatientes_rangos[i] if i < len(combatientes_rangos) else ""
+                if nombre:
                     pers_act = ReportePersonalActuante(
                         reporte_id=reporte_inst.id,
-                        nombre_completo=combatientes_nombres[i],
-                        cedula=combatientes_cis[i] if i < len(combatientes_cis) else "",
-                        rango=combatientes_rangos[i] if i < len(combatientes_rangos) else "",
+                        nombre_completo=nombre,
+                        cedula=ci,
+                        rango=rango,
                         rol_en_servicio='Combatiente'
                     )
                     db.session.add(pers_act)
@@ -264,7 +304,7 @@ def crear_reporte(tipo_reporte):
 
             db.session.commit()
             flash(f'Reporte {nro_control} creado y enviado con éxito.', 'success')
-            return redirect(url_for('main.index'))
+            return redirect(url_for('reportes.detalle_reporte', reporte_id=reporte_inst.id))
 
         except Exception as e:
             db.session.rollback()
@@ -272,12 +312,14 @@ def crear_reporte(tipo_reporte):
             return redirect(url_for('reportes.crear_reporte', tipo_reporte=tipo_reporte))
 
     vehiculos = Vehiculo.query.filter_by(activo=True).all()
+    bomberos = Usuario.query.filter_by(activo=True).order_by(Usuario.rango.asc(), Usuario.nombre.asc()).all()
     date_today = datetime.utcnow().strftime('%Y-%m-%d')
     return render_template(
         'reportes/crear.html',
         tipo_reporte=tipo_reporte,
         title=title,
         vehiculos=vehiculos,
+        bomberos=bomberos,
         date_today=date_today
     )
 
@@ -296,3 +338,54 @@ def detalle_reporte(reporte_id):
         return redirect(url_for('main.index'))
         
     return render_template('reportes/detalle.html', reporte=reporte)
+
+
+@reportes_bp.route('/pdf/<int:reporte_id>')
+@login_required
+def descargar_pdf(reporte_id):
+    """
+    Genera y descarga el reporte operativo en formato PDF (tamaño Carta).
+
+    El logotipo, el nro de control, los tiempos, vehículos, solicitante,
+    receptor y dirección se incrustan automáticamente desde la base de datos.
+    """
+    reporte = Reporte.query.get_or_404(reporte_id)
+
+    # Restricción: Un bombero ordinario solo puede descargar su propio historial
+    if not current_user.es_admin and reporte.creador_id != current_user.id:
+        flash('Acceso denegado: No está autorizado para descargar este reporte.', 'danger')
+        return redirect(url_for('main.index'))
+
+    try:
+        pdf_bytes, motor = generar_pdf_reporte(reporte)
+    except Exception as e:
+        flash(f'Error al generar el PDF: {str(e)}', 'danger')
+        return redirect(url_for('reportes.detalle_reporte', reporte_id=reporte.id))
+
+    nombre_archivo = f"Reporte_{reporte.nro_control.replace('/', '_')}.pdf"
+    respuesta = Response(pdf_bytes, mimetype='application/pdf')
+    respuesta.headers['Content-Disposition'] = f'attachment; filename="{nombre_archivo}"'
+    return respuesta
+
+
+@reportes_bp.route('/imprimir/<int:reporte_id>')
+@login_required
+def imprimir_reporte(reporte_id):
+    """
+    Vista de impresión/reimpresión del reporte: muestra el documento oficial
+    en pantalla para imprimirlo con el navegador (Ctrl+P). Reutiliza la misma
+    plantilla del PDF, por lo que el resultado de impresión es idéntico al
+    documento descargado. La barra de acciones no se imprime (.no-print).
+    """
+    reporte = Reporte.query.get_or_404(reporte_id)
+
+    # Restricción: Un bombero ordinario solo puede imprimir su propio historial
+    if not current_user.es_admin and reporte.creador_id != current_user.id:
+        flash('Acceso denegado: No está autorizado para imprimir este reporte.', 'danger')
+        return redirect(url_for('main.index'))
+
+    try:
+        return renderizar_html_reporte(reporte)
+    except Exception as e:
+        flash(f'Error al preparar la impresión: {str(e)}', 'danger')
+        return redirect(url_for('reportes.detalle_reporte', reporte_id=reporte.id))

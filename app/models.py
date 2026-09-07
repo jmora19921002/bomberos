@@ -82,6 +82,7 @@ class Reporte(db.Model):
     solicitante_cedula = db.Column(db.String(20), nullable=True)
     solicitante_telefono = db.Column(db.String(30), nullable=True)
     receptor_aviso = db.Column(db.String(150), nullable=False)  # Nombre o cargo de quien recibió el reporte radial/telefónico
+    receptor_cedula = db.Column(db.String(20), nullable=True)  # Cédula o RIF del receptor
     
     # Ubicación del evento
     direccion = db.Column(db.Text, nullable=False)
@@ -190,6 +191,7 @@ class ReporteMatpelGLP(Reporte):
     clasificacion_servicio = db.Column(db.String(100), nullable=True)  # Residencial, Comercial, Industrial, Transporte
     nombre_producto = db.Column(db.String(150), nullable=True)  # GLP, Propano, Butano, etc.
     un_numero = db.Column(db.String(10), nullable=True)  # Ej: UN 1075
+    riesgo_producto = db.Column(db.String(150), nullable=True)  # Inflamable, Explosivo, Asfixiante, etc.
     tipo_almacenamiento = db.Column(db.String(100), nullable=True)  # Cilindro, Tanque Estacionario, Cisterna
     
     # Certificaciones y Permisologías
@@ -203,8 +205,10 @@ class ReporteMatpelGLP(Reporte):
     
     # Datos del vehículo involucrado si aplica (transporte de GLP)
     vehiculo_marca = db.Column(db.String(50), nullable=True)
+    vehiculo_modelo = db.Column(db.String(50), nullable=True)
     vehiculo_placa = db.Column(db.String(20), nullable=True)
     vehiculo_color = db.Column(db.String(30), nullable=True)
+    vehiculo_afecto = db.Column(db.Boolean, default=False)  # Si el vehículo afectó el inmueble
     
     # Controles técnicos
     hoja_seguridad = db.Column(db.Boolean, default=False)
@@ -226,9 +230,16 @@ class ReporteMatpelCombustible(Reporte):
     
     tipo_combustible = db.Column(db.String(100), nullable=True)  # Gasolina, Diésel, Kerosén, etc.
     tipo_almacenamiento = db.Column(db.String(100), nullable=True)  # Tanque subterráneo, Superficial, Vehicular, etc.
+    un_numero = db.Column(db.String(10), nullable=True)  # Código ONU del combustible (ej: UN 1203 Gasolina)
+    capacidad_tanque_litros = db.Column(db.Numeric(10, 2), nullable=True)  # Capacidad total del tanque en litros
     vehiculos_involucrados = db.Column(db.Text, nullable=True)  # Descripción de vehículos implicados
     mitigacion_efectuada = db.Column(db.Text, nullable=True)  # Ej: Capa de espuma, lavado con detergente, dispersión
     cantidad_estimada_derrame = db.Column(db.Numeric(10, 2), nullable=True)  # En Litros
+    vehiculo_marca = db.Column(db.String(50), nullable=True)  # Marca del vehículo que causó el derrame
+    vehiculo_modelo = db.Column(db.String(50), nullable=True)  # Modelo del vehículo
+    vehiculo_placa = db.Column(db.String(20), nullable=True)  # Placa del vehículo
+    vehiculo_color = db.Column(db.String(30), nullable=True)  # Color del vehículo
+    vehiculo_afecto = db.Column(db.Boolean, default=False)  # Si el vehículo afectó/causó el derrame
 
     __mapper_args__ = {
         'polymorphic_identity': 'matpel_combustible',
@@ -249,6 +260,11 @@ class ReporteMatpelQuimico(Reporte):
     materiales_absorbentes_usados = db.Column(db.String(255), nullable=True)  # Arena, Aserrín, Cal, etc.
     materiales_neutralizantes_usados = db.Column(db.String(255), nullable=True)
     acciones_mitigacion = db.Column(db.Text, nullable=True)
+    vehiculo_marca = db.Column(db.String(50), nullable=True)
+    vehiculo_modelo = db.Column(db.String(50), nullable=True)
+    vehiculo_placa = db.Column(db.String(20), nullable=True)
+    vehiculo_color = db.Column(db.String(30), nullable=True)
+    vehiculo_afecto = db.Column(db.Boolean, default=False)
 
     __mapper_args__ = {
         'polymorphic_identity': 'matpel_quimico',
@@ -405,3 +421,9 @@ class ReporteServicioBaldeo(Reporte):
     __mapper_args__ = {
         'polymorphic_identity': 'servicio_baldeo',
     }
+
+RANGOS_BOMBERILES = [
+    'Primer General', 'General', 'Mayor', 'Teniente Coronel', 'Coronel', 'Capitán', 'Teniente',
+    'Primer Teniente', 'Sargento Segundo', 'Sargento Primero', 'Sargento Mayor', 'Cabo Segundo',
+    'Cabo Primero', 'Distinguido', 'Bombero Raso'
+]

@@ -16,8 +16,8 @@ def load_user(user_id):
 
 
 def crear_usuarios_defecto():
-    """Crea usuarios semilla para pruebas iniciales."""
-    # Verificar si ya existen usuarios
+    """Crea usuarios semilla para pruebas iniciales si la BD está vacía."""
+    # Verificar si ya existen usuarios (no re-crear si hay datos reales)
     if Usuario.query.first() is None:
         # Crear Admin
         admin = Usuario(
@@ -65,14 +65,13 @@ def create_app(config_class=Config):
     app.register_blueprint(main_bp)
     app.register_blueprint(reportes_bp, url_prefix='/reportes')
 
-    # Crear base de datos de forma automática en desarrollo (si es SQLite)
-    # o crear tablas si no existen para agilizar el arranque
+    # Crear las tablas automáticamente si no existen (SQLite y PostgreSQL).
+    # create_all es idempotente: no toca las tablas que ya existen.
+    # Los usuarios por defecto solo se crean cuando la BD está vacía.
     with app.app_context():
-        if app.config['SQLALCHEMY_DATABASE_URI'].startswith('sqlite'):
-            db.create_all()
-            # Crear administrador de prueba si no existe
-            crear_usuarios_defecto()
-            
+        db.create_all()
+        crear_usuarios_defecto()
+
     return app
 
 # Instancia de aplicación para servidores WSGI como Gunicorn

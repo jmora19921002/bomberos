@@ -47,12 +47,20 @@
                         <option value="Radial">Radial</option>
                         <option value="Telefonico">Telefónico</option>
                         <option value="Personal">Personal</option>
-                        <option value="Prensa">Prensa / RRSS</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 mb-1">Recibido por (Receptor) *</label>
                     <input type="text" name="receptor_aviso" required placeholder="Nombre de quien recibe"
+                        class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
+                </div>
+            </div>
+
+            <!-- Cédula del Receptor -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-slate-800/40 pt-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Cédula / RIF del Receptor</label>
+                    <input type="text" name="receptor_cedula" placeholder="ej: V-12345678"
                         class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
                 </div>
             </div>
@@ -132,7 +140,7 @@
             {% if tipo_reporte == 'matpel_glp' %}
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1">Clasificación del Servicio *</label>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Tipo de Estructura *</label>
                     <select name="clasificacion_servicio" required
                         class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
                         <option value="Residencial">Residencial</option>
@@ -147,15 +155,36 @@
                         class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
                         <option value="Cilindro GLP 10kg">Cilindro GLP (10kg)</option>
                         <option value="Cilindro GLP 18kg">Cilindro GLP (18kg)</option>
-                        <option value="Cilindro GLP 43kg">Cilindro GLP (43kg)</option>
+                        <option value="Cilindro GLP 43kg">Cilindro GLP (27kg)</option>
+                        <option value="Cilindro GLP 18kg">Cilindro GLP (43kg)</option>
+                        <option value="Cilindro GLP 43kg">Cilindro GLP (47kg)</option>
                         <option value="Tanque Estacionario">Tanque Estacionario</option>
                         <option value="Cisterna / Camion">Camión Cisterna de Gas</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1">Nombre del Producto / UN</label>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Nombre del Producto *</label>
                     <input type="text" name="nombre_producto" value="Gas Licuado de Petróleo (GLP)" required
                         class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Código ONU (UN)</label>
+                    <input type="text" name="un_numero" value="UN 1075" placeholder="ej: UN 1075"
+                        class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
+                </div>
+            </div>
+            <!-- Riesgo del Producto -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-slate-800/40 pt-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Riesgo del Producto</label>
+                    <select name="riesgo_producto"
+                        class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
+                        <option value="Inflamable">Inflamable</option>
+                        <option value="Explosivo">Explosivo</option>
+                        <option value="Asfixiante">Asfixiante</option>
+                        <option value="Tóxico">Tóxico</option>
+                        <option value="Otro">Otro</option>
+                    </select>
                 </div>
             </div>
             <!-- Propietario -->
@@ -212,9 +241,13 @@
             <!-- Vehículo Transportador Involucrado -->
             <div class="border-t border-slate-800/40 pt-4 space-y-2">
                 <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Datos de Vehículo Transportador de GLP Involucrado (Si Aplica)</span>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                     <div>
                         <input type="text" name="vehiculo_marca" placeholder="Marca (ej: Chevrolet Cargo)"
+                            class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
+                    </div>
+                    <div>
+                        <input type="text" name="vehiculo_modelo" placeholder="Modelo"
                             class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
                     </div>
                     <div>
@@ -226,6 +259,10 @@
                             class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
                     </div>
                 </div>
+                <label class="inline-flex items-center text-xs text-slate-300 cursor-pointer">
+                    <input type="checkbox" name="vehiculo_afecto" class="rounded bg-slate-900 border-slate-800 text-fire-600 focus:ring-fire-500 h-4 w-4">
+                    <span class="ml-1.5">El vehículo afectó el inmueble (Sí aplica)</span>
+                </label>
             </div>
 
             {# 2.2 DERRAME COMBUSTIBLE #}
@@ -233,7 +270,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 mb-1">Tipo de Combustible *</label>
-                    <select name="tipo_combustible" required
+                    <select name="tipo_combustible" required onchange="manejarOtros(this, 'tipo_combustible_otro')"
                         class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
                         <option value="Gasolina">Gasolina</option>
                         <option value="Diesel">Diésel (Gasoil)</option>
@@ -241,22 +278,46 @@
                         <option value="Aceite / Lubricante">Aceite / Lubricante</option>
                         <option value="Otro">Otro</option>
                     </select>
+                    <input type="text" name="tipo_combustible_otro" id="tipo_combustible_otro" placeholder="Especifique el tipo de combustible" style="display:none"
+                        class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1 mt-2">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 mb-1">Tipo de Almacenamiento *</label>
-                    <select name="tipo_almacenamiento" required
+                    <select name="tipo_almacenamiento" required onchange="manejarOtros(this, 'almacenamiento_combustible_otro')"
                         class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
                         <option value="Tanque Subterraneo">Tanque Subterráneo</option>
                         <option value="Tanque Superficial">Tanque Superficial</option>
                         <option value="Tanque Vehicular">Tanque Vehicular (Automóvil/Camión)</option>
                         <option value="Cisterna de Transporte">Cisterna de Transporte</option>
                         <option value="Tambores / Envases">Tambores / Envases menores</option>
+                        <option value="Otro">Otro</option>
                     </select>
+                    <input type="text" name="almacenamiento_combustible_otro" id="almacenamiento_combustible_otro" placeholder="Especifique el tipo de almacenamiento" style="display:none"
+                        class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1 mt-2">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Código ONU (UN)</label>
+                    <input type="text" name="un_numero" placeholder="ej: UN 1203 (Gasolina)"
+                        class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-slate-800/40 pt-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Capacidad del Tanque (Litros)</label>
+                    <input type="number" step="0.1" name="capacidad_tanque_litros" placeholder="ej: 50000"
+                        class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 mb-1">Cantidad Estimada Derrame (Litros) *</label>
                     <input type="number" step="0.1" name="cantidad_estimada_derrame" required placeholder="ej: 150.5"
                         class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
+                </div>
+                <div class="flex flex-col justify-center space-y-2 bg-slate-950/40 p-3 rounded-xl border border-slate-800/40">
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">¿El vehículo causó el derrame?</span>
+                    <label class="inline-flex items-center text-xs text-slate-300 cursor-pointer">
+                        <input type="checkbox" name="vehiculo_afecto" class="rounded bg-slate-900 border-slate-800 text-fire-600 focus:ring-fire-500 h-4 w-4">
+                        <span class="ml-1.5">Vehículo Afectó (Sí aplica)</span>
+                    </label>
                 </div>
             </div>
             <div class="grid grid-cols-1 gap-4 border-t border-slate-800/40 pt-4">
@@ -265,6 +326,33 @@
                     <input type="text" name="vehiculos_involucrados" placeholder="Describa marcas, placas, modelos involucrados en el derrame..."
                         class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
                 </div>
+            </div>
+            <!-- Características del Vehículo con Derrame -->
+            <div class="border-t border-slate-800/40 pt-4 space-y-2">
+                <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Características del Vehículo que Provocó el Derrame (Si Aplica)</span>
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Marca</label>
+                        <input type="text" name="vehiculo_marca" placeholder="ej: Toyota"
+                            class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Modelo</label>
+                        <input type="text" name="vehiculo_modelo" placeholder="ej: Hilux"
+                            class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Placa</label>
+                        <input type="text" name="vehiculo_placa" placeholder="Placa del vehículo"
+                            class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Color</label>
+                        <input type="text" name="vehiculo_color" placeholder="Color del vehículo"
+                            class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
+                    </div>
+                </div>
+            </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 mb-1">Mitigación Efectuada *</label>
                     <textarea name="mitigacion_efectuada" required rows="2" placeholder="ej: Aplicación de capa de espuma AFFF, lavado con abundante agua y detergente neutro..."
@@ -286,9 +374,23 @@
                         class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1">Riesgos Específicos Identificados *</label>
-                    <input type="text" name="riesgos_especificos" required placeholder="ej: Corrosivo, Tóxico por inhalación, Reactivo con agua"
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Riesgos Específicos (Clase ONU) *</label>
+                    <select name="riesgos_especificos" required onchange="manejarOtros(this, 'riesgos_especificos_otro')"
                         class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
+                        <option value="">Seleccione una opción</option>
+                        <option value="Clase 1: Explosivos">Clase 1: Explosivos</option>
+                        <option value="Clase 2: Gases">Clase 2: Gases</option>
+                        <option value="Clase 3: Líquidos inflamables">Clase 3: Líquidos inflamables</option>
+                        <option value="Clase 4: Sólidos inflamables">Clase 4: Sólidos inflamables</option>
+                        <option value="Clase 5: Oxidantes y peróxidos orgánicos">Clase 5: Oxidantes y peróxidos orgánicos</option>
+                        <option value="Clase 6: Sustancias tóxicas e infecciosas">Clase 6: Sustancias tóxicas e infecciosas</option>
+                        <option value="Clase 7: Radiactivo">Clase 7: Radiactivo</option>
+                        <option value="Clase 8: Corrosivos">Clase 8: Corrosivos</option>
+                        <option value="Clase 9: Misceláneos">Clase 9: Misceláneos</option>
+                        <option value="Otro">Otro (especificar)</option>
+                    </select>
+                    <input type="text" name="riesgos_especificos_otro" id="riesgos_especificos_otro" placeholder="Especifique el riesgo" style="display:none"
+                        class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1 mt-2">
                 </div>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-800/40 pt-4">
@@ -309,6 +411,36 @@
                     <textarea name="acciones_mitigacion" required rows="2" placeholder="Describa el dique de contención, neutralización del derrame, ventilación, etc..."
                         class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1 custom-scrollbar"></textarea>
                 </div>
+            </div>
+            <!-- Características del Vehículo con Derrame -->
+            <div class="border-t border-slate-800/40 pt-4 space-y-2">
+                <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Características del Vehículo Involucrado (Si Aplica)</span>
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Marca</label>
+                        <input type="text" name="vehiculo_marca" placeholder="ej: Toyota"
+                            class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Modelo</label>
+                        <input type="text" name="vehiculo_modelo" placeholder="ej: Hilux"
+                            class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Placa</label>
+                        <input type="text" name="vehiculo_placa" placeholder="Placa del vehículo"
+                            class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Color</label>
+                        <input type="text" name="vehiculo_color" placeholder="Color del vehículo"
+                            class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
+                    </div>
+                </div>
+                <label class="inline-flex items-center text-xs text-slate-300 cursor-pointer">
+                    <input type="checkbox" name="vehiculo_afecto" class="rounded bg-slate-900 border-slate-800 text-fire-600 focus:ring-fire-500 h-4 w-4">
+                    <span class="ml-1.5">El vehículo afectó / causó el derrame (Sí aplica)</span>
+                </label>
             </div>
 
             {# 2.4 MATPEL OTROS #}
@@ -412,7 +544,7 @@
             {% elif tipo_reporte == 'servicio_agua' %}
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1">Clasificación del Servicio *</label>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Tipo de Estructura *</label>
                     <select name="clasificacion_servicio" required
                         class="block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1">
                         <option value="Comunidad / Residencial">Comunidad / Residencial</option>
@@ -710,14 +842,14 @@
                 <div class="bg-slate-950/45 p-4 rounded-xl border border-slate-800/40 space-y-2">
                     <span class="block text-xs font-bold text-fire-400">Jefe de Comisión *</span>
                     <div class="space-y-2">
-                        <input type="text" name="jefe_comision_nombre" required placeholder="Nombre y Apellido"
+                        <select name="jefe_comision_usuario_id" required
                             class="block w-full rounded-lg border-slate-800 bg-slate-950/60 p-2 text-xs text-slate-300 focus:border-fire-500 focus:outline-none border focus:ring-1">
-                        <div class="grid grid-cols-2 gap-2">
-                            <input type="text" name="jefe_comision_ci" placeholder="C.I. (ej: V-10222333)"
-                                  class="block w-full rounded-lg border-slate-800 bg-slate-950/60 p-2 text-xs text-slate-300 focus:border-fire-500 focus:outline-none border focus:ring-1">
-                            <input type="text" name="jefe_comision_rango" placeholder="Rango (ej: Sargento)"
-                                  class="block w-full rounded-lg border-slate-800 bg-slate-950/60 p-2 text-xs text-slate-300 focus:border-fire-500 focus:outline-none border focus:ring-1">
-                        </div>
+                            <option value="">— Seleccione un Bombero —</option>
+                            {% for b in bomberos %}
+                            <option value="{{ b.id }}">{{ b.rango or 'Bombero' }} {{ b.nombre }} {{ b.apellido }} (C.I.: {{ b.cedula }})</option>
+                            {% endfor %}
+                        </select>
+                        <p class="text-[10px] text-slate-500">El nombre, rango y C.I. se cargan automáticamente del registro del bombero.</p>
                     </div>
                 </div>
 
@@ -725,14 +857,14 @@
                 <div class="bg-slate-950/45 p-4 rounded-xl border border-slate-800/40 space-y-2">
                     <span class="block text-xs font-bold text-fire-400">Conductor Asignado *</span>
                     <div class="space-y-2">
-                        <input type="text" name="conductor_unidad_nombre" required placeholder="Nombre y Apellido"
+                        <select name="conductor_unidad_usuario_id" required
                             class="block w-full rounded-lg border-slate-800 bg-slate-950/60 p-2 text-xs text-slate-300 focus:border-fire-500 focus:outline-none border focus:ring-1">
-                        <div class="grid grid-cols-2 gap-2">
-                            <input type="text" name="conductor_unidad_ci" placeholder="C.I. Conductor"
-                                  class="block w-full rounded-lg border-slate-800 bg-slate-950/60 p-2 text-xs text-slate-300 focus:border-fire-500 focus:outline-none border focus:ring-1">
-                            <input type="text" name="conductor_unidad_rango" placeholder="Rango Conductor"
-                                  class="block w-full rounded-lg border-slate-800 bg-slate-950/60 p-2 text-xs text-slate-300 focus:border-fire-500 focus:outline-none border focus:ring-1">
-                        </div>
+                            <option value="">— Seleccione un Bombero —</option>
+                            {% for b in bomberos %}
+                            <option value="{{ b.id }}">{{ b.rango or 'Bombero' }} {{ b.nombre }} {{ b.apellido }} (C.I.: {{ b.cedula }})</option>
+                            {% endfor %}
+                        </select>
+                        <p class="text-[10px] text-slate-500">El nombre, rango y C.I. se cargan automáticamente del registro del bombero.</p>
                     </div>
                 </div>
 
@@ -838,14 +970,15 @@
 
 <template id="plantilla-combatiente">
     <div class="fila-combatiente grid grid-cols-1 sm:grid-cols-4 gap-2 bg-slate-950/20 p-2 rounded-lg border border-slate-800/40 relative">
-        <input type="text" name="combatientes_nombres[]" required placeholder="Nombre completo"
-            class="block w-full rounded-lg border-slate-800 bg-slate-950/60 p-2 text-xs text-slate-300 focus:border-fire-500 focus:outline-none border focus:ring-1 sm:col-span-2">
-        <input type="text" name="combatientes_cis[]" placeholder="C.I. combatiente"
-            class="block w-full rounded-lg border-slate-800 bg-slate-950/60 p-2 text-xs text-slate-300 focus:border-fire-500 focus:outline-none border focus:ring-1">
-        <div class="flex items-center space-x-2">
-            <input type="text" name="combatientes_rangos[]" placeholder="Rango"
-                class="block w-full rounded-lg border-slate-800 bg-slate-950/60 p-2 text-xs text-slate-300 focus:border-fire-500 focus:outline-none border focus:ring-1 flex-grow">
-            <button type="button" onclick="eliminarCombatiente(this)" class="p-1 text-slate-500 hover:text-red-500 transition-colors">
+        <select name="combatientes_usuario_id[]" required
+            class="block w-full rounded-lg border-slate-800 bg-slate-950/60 p-2 text-xs text-slate-300 focus:border-fire-500 focus:outline-none border focus:ring-1 sm:col-span-3">
+            <option value="">— Seleccione un Bombero —</option>
+            {% for b in bomberos %}
+            <option value="{{ b.id }}">{{ b.rango or 'Bombero' }} {{ b.nombre }} {{ b.apellido }} (C.I.: {{ b.cedula }})</option>
+            {% endfor %}
+        </select>
+        <div class="flex items-center justify-end space-x-2">
+            <button type="button" onclick="eliminarCombatiente(this)" class="p-1 text-slate-500 hover:text-red-500 transition-colors" title="Quitar combatiente">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
             </button>
         </div>
@@ -915,9 +1048,40 @@
         fila.remove();
     }
 
-    // Inicializar con un organismo vacío
+    // Función para manejar opción "Otro" en selects
+    function manejarOtros(select, inputId) {
+        const input = document.getElementById(inputId);
+        if (select.value === 'Otro') {
+            input.style.display = 'block';
+            input.required = true;
+        } else {
+            input.style.display = 'none';
+            input.required = false;
+            input.value = '';
+        }
+    }
+
+    // Agregar opción "Otro" al select de riesgo GLP
     document.addEventListener("DOMContentLoaded", function() {
         agregarOrganismo();
+        
+        // GLP: Riesgo del Producto - agregar "Otro"
+        const riesgoGlp = document.querySelector('select[name="riesgo_producto"]');
+        if (riesgoGlp) {
+            const otroOpt = document.createElement('option');
+            otroOpt.value = 'Otro';
+            otroOpt.textContent = 'Otro (especificar)';
+            riesgoGlp.appendChild(otroOpt);
+            const otroInput = document.createElement('input');
+            otroInput.type = 'text';
+            otroInput.name = 'riesgo_producto_otro';
+            otroInput.id = 'riesgo_producto_otro';
+            otroInput.placeholder = 'Especifique el riesgo';
+            otroInput.style.display = 'none';
+            otroInput.className = 'block w-full rounded-xl border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300 focus:border-fire-500 focus:ring-fire-500 focus:outline-none border focus:ring-1 mt-2';
+            riesgoGlp.parentNode.appendChild(otroInput);
+            riesgoGlp.setAttribute('onchange', "manejarOtros(this, 'riesgo_producto_otro')");
+        }
     });
 </script>
 {% endblock %}
